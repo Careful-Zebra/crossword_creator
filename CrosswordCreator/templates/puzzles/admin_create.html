@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Crossword</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; max-width: 600px; }
+        .form-group { margin-bottom: 1rem; }
+        .word-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        input[type="text"] { padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Generate a New Crossword</h1>
+    
+    <form method="POST">
+        {% csrf_token %} 
+        
+        <div class="form-group">
+            <label for="title"><strong>Puzzle Title:</strong></label><br>
+            <input type="text" id="title" name="title" required placeholder="e.g., Friday Fun">
+        </div>
+        
+        <h3>Words and Clues</h3>
+        <div id="word-container">
+            <div class="word-row">
+                <input type="text" name="word[]" placeholder="Word (e.g. DJANGO)" required>
+                <input type="text" name="clue[]" placeholder="Clue (e.g. Python web framework)" style="flex-grow: 1;" required>
+            </div>
+            <div class="word-row">
+                <input type="text" name="word[]" placeholder="Word" required>
+                <input type="text" name="clue[]" placeholder="Clue" style="flex-grow: 1;" required>
+            </div>
+            <div class="word-row">
+                <input type="text" name="word[]" placeholder="Word" required>
+                <input type="text" name="clue[]" placeholder="Clue" style="flex-grow: 1;" required>
+            </div>
+        </div>
+        
+        <button type="button" onclick="addRow()" style="margin-bottom: 20px;">+ Add Another Word</button>
+        <br>
+        <button type="submit" style="padding: 10px 20px; cursor: pointer; background: black; color: white;">Generate Grid</button>
+    </form>
+
+    <script>
+        function addRow() {
+            const container = document.getElementById('word-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'word-row';
+            newRow.innerHTML = `
+                <input type="text" name="word[]" placeholder="Word" required>
+                <input type="text" name="clue[]" placeholder="Clue" style="flex-grow: 1;" required>
+            `;
+            container.appendChild(newRow);
+        }
+    </script>
+</body>
+</html>

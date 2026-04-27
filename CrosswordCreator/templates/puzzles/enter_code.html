@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join Crossword</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; max-width: 400px; text-align: center; }
+        .error { color: red; font-weight: bold; }
+        input { text-transform: uppercase; padding: 10px; font-size: 1.2rem; width: 150px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Play a Crossword</h1>
+    
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <p>Enter your 6-character code:</p>
+        <input type="text" name="code" maxlength="6" required placeholder="XXXXXX">
+        <br><br>
+        <button type="submit" style="padding: 10px 20px; font-size: 1.1rem; cursor: pointer;">Play</button>
+    </form>
+</body>
+</html>

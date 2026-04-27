@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ puzzle.title }}</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; }
+        
+        /* The CSS Grid magic */
+        .crossword-board {
+            display: grid;
+            /* Dynamically sets columns based on the puzzle.cols integer from models.py */
+            grid-template-columns: repeat({{ puzzle.cols }}, 40px);
+            gap: 2px;
+            background-color: black;
+            width: max-content;
+            padding: 4px;
+            border: 4px solid black;
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .cell.black-square {
+            background-color: black;
+        }
+
+        .clue-list {
+            margin-top: 2rem;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ puzzle.title }}</h1>
+    <p><strong>Share this code with friends:</strong> <span style="font-family: monospace; background: #eee; padding: 3px 6px;">{{ puzzle.code }}</span></p>
+
+    <div class="crossword-board">
+        {% for row in puzzle.grid %}
+            {% for cell in row %}
+                {% if cell == '' %}
+                    <div class="cell black-square"></div>
+                {% else %}
+                    <div class="cell">{{ cell }}</div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <div class="clue-list">
+        <h2>Clues</h2>
+        <ul>
+            {% for item in puzzle.clues %}
+                <li><strong>{{ item.direction }}</strong>: {{ item.clue }} <em>(Answer: {{ item.word }})</em></li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
