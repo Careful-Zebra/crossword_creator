@@ -9,24 +9,84 @@ class CrosswordGenerator:
         # Sort words by length descending to place the biggest ones first
         self.word_data = sorted(words_and_clues, key=lambda x: len(x['word']), reverse=True)
         self.placed_words = []
+        self.attempts = 0
+        self.max_attempts = 100 # Let it try 50 completely different layouts before giving up
 
     def generate(self):
         for item in self.word_data:
             word = item['word'].upper()
             clue = item['clue']
+            # puzzles/utils.py (inside generate)
             placed = self._place_word(word, clue)
             if not placed:
-                # If a word couldn't fit, expand the grid and regenerate everything
+
+                self.attempts += 1
+                
+                # Escape hatch: Crash gracefully with a helpful message
+                if self.attempts > self.max_attempts:
+                    raise ValueError(f"Could not intersect the word '{word}'. Make sure your words share enough common letters!")
+                
+                if self.grid_size >= 100:
+                    self.grid_size = 12 #reset grid size, make it try and regenerate, hope randomness fixes
+                
+                # If a word couldn't fit and we are under the limit, expand and regenerate
                 self.grid_size += 2
                 self.grid = [['' for _ in range(self.grid_size)] for _ in range(self.grid_size)]
                 self.placed_words = []
-                return self.generate()  # Recursive call with the larger grid
-                
+                #Shuffle the word list so the retry builds a completely different shape
+                random.shuffle(self.word_data)
+                return self.generate()
+            
+        # After all words are placed, clean up the grid to minimize its size
+        self._clean_grid()
+        rich_grid = self._assign_numbers()
         
         return {
-            "grid": self.grid,
+            "grid": rich_grid,
             "clues": self.placed_words
         }
+    
+    def _clean_grid(self):
+        # 1. Find the bounding box (the edges of the actual crossword)
+        min_r = min((r for r in range(self.grid_size) for c in range(self.grid_size) if self.grid[r][c] != ''), default=0)
+        max_r = max((r for r in range(self.grid_size) for c in range(self.grid_size) if self.grid[r][c] != ''), default=self.grid_size-1)
+        min_c = min((c for r in range(self.grid_size) for c in range(self.grid_size) if self.grid[r][c] != ''), default=0)
+        max_c = max((c for r in range(self.grid_size) for c in range(self.grid_size) if self.grid[r][c] != ''), default=self.grid_size-1)
+
+        # 2. Slice the grid to only include the bounding box
+        self.grid = [row[min_c:max_c+1] for row in self.grid[min_r:max_r+1]]
+
+        # 3. Shift all the saved coordinates so they match the newly trimmed grid
+        for word in self.placed_words:
+            word['row'] -= min_r
+            word['col'] -= min_c
+
+    def _assign_numbers(self):
+        rows = len(self.grid)
+        cols = len(self.grid[0]) if rows > 0 else 0
+        
+        # Create a new "rich" grid where every cell is a dictionary instead of a string
+        rich_grid = [[{"char": self.grid[r][c], "num": None} for c in range(cols)] for r in range(rows)]
+        
+        current_num = 1
+        
+        # Scan top-to-bottom, left-to-right
+        for r in range(rows):
+            for c in range(cols):
+                if self.grid[r][c] == '': continue
+                
+                starts_word = False
+                # Check if this specific cell is the starting row/col for any word
+                for word_data in self.placed_words:
+                    if word_data['row'] == r and word_data['col'] == c:
+                        word_data['num'] = current_num
+                        starts_word = True
+                        
+                if starts_word:
+                    rich_grid[r][c]['num'] = current_num
+                    current_num += 1
+                    
+        return rich_grid
 
     def _place_word(self, word, clue):
         # 1. Place the first word roughly in the middle

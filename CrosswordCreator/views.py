@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Puzzle
 from .utils import CrosswordGenerator  
+from django.contrib import messages
 
 
 
@@ -39,15 +40,25 @@ def create_crossword(request):
         
         # 3. Initialize your library with the dynamic data
         generator = CrosswordGenerator(words_and_clues, grid_size=15)
+
+        # 4. Run the generation algorithm 
+        try:
+            result = generator.generate()
+        except ValueError as error_message:
+            # 3. If it fails, send the error to the frontend and reload the page
+            messages.error(request, str(error_message))
+            return render(request, 'puzzles/admin_create.html')
         
-        # 4. Run the generation algorithm
-        result = generator.generate()
+        # Calculate rows and columns separately
+        final_rows = len(result['grid'])
+        # Get the length of the first row (the columns), defaulting to 0 if grid is empty
+        final_cols = len(result['grid'][0]) if final_rows > 0 else 0 
         
-        # 5. Save it to the database
+        # 5. Save it to the database with exact dimensions
         puzzle = Puzzle.objects.create(
             title=title,
-            rows=15,
-            cols=15,
+            rows=final_rows,
+            cols=final_cols,  
             grid=result['grid'],
             clues=result['clues']
         )
